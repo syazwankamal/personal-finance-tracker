@@ -7,23 +7,27 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Personal Finance',
-        short_name: 'Personal Finance',
+        name: 'Personal Finance Tracker',
+        short_name: 'Finance Tracker',
         description: 'AI-First Personal Finance Tracker PWA',
-        theme_color: '#ffffff',
+        theme_color: '#2563eb',
+        background_color: '#f8fafc',
+        display: 'standalone',
         icons: [
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           }
         ]
       }
