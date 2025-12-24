@@ -37,11 +37,13 @@ export const performFullBackup = async (config: S3Config) => {
     const budgets = await db.budgets.toArray();
     const categories = await db.settings.get("categories");
 
+    // We don't include Blobs in the main JSON backup to keep it small.
+    // Receipts should be uploaded individually.
     const backupData = {
         version: 1,
         timestamp: new Date().toISOString(),
         data: {
-            expenses,
+            expenses: expenses.map(({ localReceipt, ...rest }) => rest), // Strip blobs
             budgets,
             categories: categories?.value ? JSON.parse(categories.value) : [],
         },
@@ -49,4 +51,10 @@ export const performFullBackup = async (config: S3Config) => {
 
     const fileName = `backups/finance_backup_${new Date().toISOString().split('T')[0]}_${Date.now()}.json`;
     return await uploadToS3(config, fileName, JSON.stringify(backupData, null, 2));
+};
+
+export const uploadReceiptToS3 = async (config: S3Config, expenseId: string, blob: Blob) => {
+    const fileName = `receipts/${expenseId}_${Date.now()}.jpg`;
+    await uploadToS3(config, fileName, blob, blob.type);
+    return fileName; // Return the S3 key
 };

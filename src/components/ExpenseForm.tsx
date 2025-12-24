@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useFinanceStore, SYSTEM_CATEGORY, type Expense } from '../store/useFinanceStore';
-import { PlusCircle, Calendar as CalendarIcon, Tag, Info, Save, X } from 'lucide-react';
+import { PlusCircle, Calendar as CalendarIcon, Tag, Info, Save, X, Camera, Image as ImageIcon } from 'lucide-react';
+import { compressImage, blobToDataURL } from '../services/imageService';
 
 interface ExpenseFormProps {
     initialData?: Partial<Expense>;
@@ -15,8 +16,37 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess }) => 
     const [category, setCategory] = useState(initialData?.category || categories[0] || SYSTEM_CATEGORY);
     const [date, setDate] = useState(initialData?.timestamp ? new Date(initialData.timestamp).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
     const [notes, setNotes] = useState(initialData?.notes || '');
+    const [receiptBlob, setReceiptBlob] = useState<Blob | null>(initialData?.localReceipt || null);
+    const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+
+    // Load preview if initial blob exists
+    React.useEffect(() => {
+        if (initialData?.localReceipt) {
+            blobToDataURL(initialData.localReceipt).then(setReceiptPreview);
+        }
+    }, [initialData?.localReceipt]);
 
     const isEditing = !!initialData?.id;
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const compressed = await compressImage(file);
+            setReceiptBlob(compressed);
+            const preview = await blobToDataURL(compressed);
+            setReceiptPreview(preview);
+        } catch (err) {
+            console.error('Failed to process image:', err);
+            alert('Failed to process image. Please try another one.');
+        }
+    };
+
+    const removeReceipt = () => {
+        setReceiptBlob(null);
+        setReceiptPreview(null);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,6 +61,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess }) => 
             notes,
             paymentMethod: initialData?.paymentMethod || 'Cash',
             isTaxDeductible: initialData?.isTaxDeductible || false,
+            localReceipt: receiptBlob || undefined,
         };
 
         if (isEditing && initialData.id) {
@@ -129,6 +160,45 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess }) => 
                     className="w-full rounded-xl border-gray-100 bg-gray-50 shadow-none focus:bg-white focus:ring-2 focus:ring-blue-500 py-3 px-4 font-medium text-gray-600 border"
                     rows={2}
                 />
+            </div>
+
+            {/* Receipt Section */}
+            <div className="space-y-3">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                    <Camera className="w-3 h-3 text-gray-300" /> Receipt Photo
+                </label>
+
+                {receiptPreview ? (
+                    <div className="relative group rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 aspect-[4/3] bg-gray-50">
+                        <img src={receiptPreview} alt="Receipt" className="w-full h-full object-contain" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                            <label className="p-3 bg-white rounded-full text-blue-600 cursor-pointer hover:scale-110 transition-transform">
+                                <Camera className="w-5 h-5" />
+                                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+                            </label>
+                            <button
+                                type="button"
+                                onClick={removeReceipt}
+                                className="p-3 bg-white rounded-full text-red-600 hover:scale-110 transition-transform"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                        <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group">
+                            <Camera className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2" />
+                            <span className="text-[10px] font-bold text-gray-400 group-hover:text-blue-500 uppercase">Take Photo</span>
+                            <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+                        </label>
+                        <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-200 rounded-2xl hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group">
+                            <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-blue-500 mb-2" />
+                            <span className="text-[10px] font-bold text-gray-400 group-hover:text-blue-500 uppercase">Upload File</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                        </label>
+                    </div>
+                )}
             </div>
 
             <div className="flex gap-3">

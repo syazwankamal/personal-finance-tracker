@@ -1,7 +1,8 @@
 import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useFinanceStore } from '../store/useFinanceStore';
-import { ChevronLeft, Edit3, Trash2, Calendar, Tag, CreditCard, FileText } from 'lucide-react';
+import { ChevronLeft, Edit3, Trash2, Calendar, Tag, CreditCard, FileText, Camera, Maximize2, X } from 'lucide-react';
+import { blobToDataURL } from '../services/imageService';
 
 const ExpenseDetail: React.FC = () => {
     const { id } = useParams();
@@ -9,6 +10,16 @@ const ExpenseDetail: React.FC = () => {
     const { expenses, deleteExpense } = useFinanceStore();
 
     const expense = expenses.find((e) => e.id === id);
+    const [receiptUrl, setReceiptUrl] = React.useState<string | null>(null);
+    const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        if (expense?.localReceipt) {
+            blobToDataURL(expense.localReceipt).then(setReceiptUrl);
+        } else {
+            setReceiptUrl(null);
+        }
+    }, [expense?.localReceipt]);
 
     if (!expense) {
         return (
@@ -102,8 +113,50 @@ const ExpenseDetail: React.FC = () => {
                             </div>
                         </div>
                     )}
+
+                    {receiptUrl && (
+                        <div className="flex items-start space-x-4">
+                            <div className="bg-gray-50 p-3 rounded-2xl text-gray-400">
+                                <Camera className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Receipt</p>
+                                <div
+                                    className="relative group rounded-2xl overflow-hidden border border-gray-100 bg-gray-50 cursor-pointer"
+                                    onClick={() => setIsLightboxOpen(true)}
+                                >
+                                    <img src={receiptUrl} alt="Receipt" className="w-full h-auto max-h-64 object-contain" />
+                                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <div className="bg-white/90 p-2 rounded-full shadow-lg">
+                                            <Maximize2 className="w-4 h-4 text-gray-600" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {/* Lightbox / Fullscreen */}
+            {isLightboxOpen && receiptUrl && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onClick={() => setIsLightboxOpen(false)}
+                >
+                    <button
+                        className="absolute top-6 right-6 p-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-colors"
+                        onClick={() => setIsLightboxOpen(false)}
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                    <img
+                        src={receiptUrl}
+                        alt="Receipt Fullscreen"
+                        className="max-w-full max-h-full object-contain rounded-xl"
+                    />
+                </div>
+            )}
         </div>
     );
 };

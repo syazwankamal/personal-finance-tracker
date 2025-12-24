@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { db, type Expense, type Budget } from '../db/db';
 export type { Expense, Budget };
 import { v4 as uuidv4 } from 'uuid';
+import { useSettingsStore } from './useSettingsStore';
+import { uploadReceiptToS3 } from '../services/s3Service';
 
 interface FinanceState {
     expenses: Expense[];
@@ -68,6 +70,20 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         set((state) => ({
             expenses: [newExpense, ...state.expenses].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
         }));
+
+        // Handle S3 Upload if configured
+        const { s3Config } = useSettingsStore.getState();
+        if (s3Config.accessKeyId && expenseData.localReceipt) {
+            try {
+                const s3Key = await uploadReceiptToS3(s3Config, id, expenseData.localReceipt);
+                await db.expenses.update(id, { receiptUrl: s3Key });
+                set((state) => ({
+                    expenses: state.expenses.map(e => e.id === id ? { ...e, receiptUrl: s3Key } : e)
+                }));
+            } catch (err) {
+                console.error('S3 Receipt upload failed:', err);
+            }
+        }
     },
 
     updateExpense: async (id, updates) => {
@@ -75,6 +91,20 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
         set((state) => ({
             expenses: state.expenses.map((e) => (e.id === id ? { ...e, ...updates } : e))
         }));
+
+        // Handle S3 Upload if a new local receipt was added/changed
+        const { s3Config } = useSettingsStore.getState();
+        if (s3Config.accessKeyId && updates.localReceipt) {
+            try {
+                const s3Key = await uploadReceiptToS3(s3Config, id, updates.localReceipt);
+                await db.expenses.update(id, { receiptUrl: s3Key });
+                set((state) => ({
+                    expenses: state.expenses.map(e => e.id === id ? { ...e, receiptUrl: s3Key } : e)
+                }));
+            } catch (err) {
+                console.error('S3 Receipt upload failed:', err);
+            }
+        }
     },
 
     deleteExpense: async (id) => {
