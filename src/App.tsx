@@ -3,8 +3,9 @@ import Settings from './components/Settings'
 import ExpenseForm from './components/ExpenseForm'
 import ExpenseList from './components/ExpenseList'
 import CategoryManager from './components/CategoryManager'
+import AIChat from './components/AIChat'
 import { useFinanceStore } from './store/useFinanceStore'
-import { Settings as SettingsIcon, LayoutDashboard } from 'lucide-react'
+import { Settings as SettingsIcon, LayoutDashboard, Sparkles } from 'lucide-react'
 import './App.css'
 
 function App() {
@@ -44,11 +45,28 @@ function App() {
         </div>
       </nav>
 
-      <main className="flex-1 overflow-y-auto p-6 max-w-lg mx-auto w-full space-y-8">
+      <main className="flex-1 overflow-y-auto p-6 max-w-lg mx-auto w-full space-y-8 pb-10">
         {view === 'settings' ? (
           <Settings />
         ) : (
           <>
+            <section className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-black text-gray-800 uppercase tracking-tighter">Quick Entry</h2>
+              </div>
+              <AIChat />
+            </section>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase font-bold">
+                <span className="bg-gray-50 px-2 text-gray-400">or manual entry</span>
+              </div>
+            </div>
+
             <ExpenseForm />
             <CategoryManager />
             <ExpenseList />
