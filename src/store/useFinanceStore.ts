@@ -3,7 +3,8 @@ import { db, type Expense, type Budget } from '../db/db';
 export type { Expense, Budget };
 import { v4 as uuidv4 } from 'uuid';
 import { useSettingsStore } from './useSettingsStore';
-import { uploadReceiptToS3 } from '../services/s3Service';
+import { CategoryService } from '../services/CategoryService';
+import { ExpenseService } from '../services/ExpenseService';
 
 interface FinanceState {
     expenses: Expense[];
@@ -54,6 +55,41 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             db.budgets.toArray()
         ]);
 
+        // MIGRATION: Backfill missing timestamps
+        const expensesToUpdate: Expense[] = [];
+        const migratedExpenses = expenses.map(e => {
+            if (!e.createdAt) {
+                const updated = {
+                    ...e,
+                    createdAt: e.timestamp, // Default to transaction time
+                    updatedAt: e.timestamp
+                };
+                expensesToUpdate.push(updated);
+                return updated;
+            }
+            return e;
+        });
+
+        if (expensesToUpdate.length > 0) {
+            console.log(`Migrating ${expensesToUpdate.length} expenses with missing timestamps...`);
+            // Lazy update in background
+            Promise.all(expensesToUpdate.map(e => db.expenses.update(e.id, { createdAt: e.createdAt, updatedAt: e.updatedAt })))
+                .catch(err => console.error('Migration failed', err));
+        }
+
+        // Sorting Logic: 
+        // 1. Transaction Date (descending)
+        // 2. Created At (descending) - for same day entries
+        const sortExpenses = (list: Expense[]) => {
+            return list.sort((a, b) => {
+                const dateDiff = b.timestamp.getTime() - a.timestamp.getTime();
+                if (dateDiff !== 0) return dateDiff;
+                const createdA = a.createdAt?.getTime() || 0;
+                const createdB = b.createdAt?.getTime() || 0;
+                return createdB - createdA;
+            });
+        };
+
         // Load settings
         const settingsArray = await db.settings.toArray();
         const settingsMap = settingsArray.reduce((acc, curr) => {
@@ -70,7 +106,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             : {};
 
         set({
-            expenses: expenses.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
+            expenses: sortExpenses(migratedExpenses),
             budgets,
             categories: savedCategories,
             categoryIcons: savedIcons,
@@ -79,51 +115,35 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     },
 
     addExpense: async (expenseData) => {
-        const id = uuidv4();
-        const newExpense = { ...expenseData, id };
-        await db.expenses.add(newExpense);
-        set((state) => ({
-            expenses: [newExpense, ...state.expenses].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-        }));
-
-        // Handle S3 Upload if configured
         const { s3Config } = useSettingsStore.getState();
-        if (s3Config.accessKeyId && expenseData.localReceipt) {
-            try {
-                const s3Key = await uploadReceiptToS3(s3Config, id, expenseData.localReceipt);
-                await db.expenses.update(id, { receiptUrl: s3Key });
-                set((state) => ({
-                    expenses: state.expenses.map(e => e.id === id ? { ...e, receiptUrl: s3Key } : e)
-                }));
-            } catch (err) {
-                console.error('S3 Receipt upload failed:', err);
-            }
-        }
+        const newExpense = await ExpenseService.addExpense(expenseData, s3Config);
+
+        set((state) => {
+            const list = [newExpense, ...state.expenses];
+            // Re-sort using same logic
+            return {
+                expenses: list.sort((a, b) => {
+                    const dateDiff = b.timestamp.getTime() - a.timestamp.getTime();
+                    if (dateDiff !== 0) return dateDiff;
+                    const createdA = a.createdAt?.getTime() || 0;
+                    const createdB = b.createdAt?.getTime() || 0;
+                    return createdB - createdA;
+                })
+            };
+        });
     },
 
     updateExpense: async (id, updates) => {
-        await db.expenses.update(id, updates);
-        set((state) => ({
-            expenses: state.expenses.map((e) => (e.id === id ? { ...e, ...updates } : e))
-        }));
-
-        // Handle S3 Upload if a new local receipt was added/changed
         const { s3Config } = useSettingsStore.getState();
-        if (s3Config.accessKeyId && updates.localReceipt) {
-            try {
-                const s3Key = await uploadReceiptToS3(s3Config, id, updates.localReceipt);
-                await db.expenses.update(id, { receiptUrl: s3Key });
-                set((state) => ({
-                    expenses: state.expenses.map(e => e.id === id ? { ...e, receiptUrl: s3Key } : e)
-                }));
-            } catch (err) {
-                console.error('S3 Receipt upload failed:', err);
-            }
-        }
+        const updatedFields = await ExpenseService.updateExpense(id, updates, s3Config);
+
+        set((state) => ({
+            expenses: state.expenses.map((e) => (e.id === id ? { ...e, ...updatedFields } : e))
+        }));
     },
 
     deleteExpense: async (id) => {
-        await db.expenses.delete(id);
+        await ExpenseService.deleteExpense(id);
         set((state) => ({
             expenses: state.expenses.filter((e) => e.id !== id)
         }));
@@ -150,80 +170,25 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
     },
 
     deleteCategory: async (name) => {
-        if (name === SYSTEM_CATEGORY) return;
-
-        const { categories, expenses, budgets, categoryIcons } = get();
-        const newCategories = categories.filter((c) => c !== name);
-
-        // Remove icon
-        const newIcons = { ...categoryIcons };
-        delete newIcons[name];
-
-        // Move expenses to Uncategorized
-        const relatedExpenses = expenses.filter((e) => e.category === name);
-        await Promise.all(
-            relatedExpenses.map((e) => db.expenses.update(e.id, { category: SYSTEM_CATEGORY }))
-        );
-
-        // Delete associated budgets
-        const relatedBudgets = budgets.filter((b) => b.category === name);
-        await Promise.all(
-            relatedBudgets.map((b) => db.budgets.delete(b.id))
-        );
-
-        await db.settings.put({ key: 'categories', value: JSON.stringify(newCategories) });
-        await db.settings.put({ key: 'categoryIcons', value: JSON.stringify(newIcons) });
+        const { categories, categoryIcons, expenses, budgets } = get();
+        const result = await CategoryService.deleteCategory(name, categories, categoryIcons);
 
         set({
-            categories: newCategories,
-            categoryIcons: newIcons,
+            categories: result.categories,
+            categoryIcons: result.icons,
+            // Optimistically update expenses and budgets in memory since service handled DB
             expenses: expenses.map((e) => e.category === name ? { ...e, category: SYSTEM_CATEGORY } : e),
             budgets: budgets.filter((b) => b.category !== name)
         });
     },
 
     renameCategory: async (oldName, newName) => {
-        if (!oldName || !newName || oldName === newName) return;
-        const { categories, expenses, budgets, categoryIcons } = get();
-
-        // 1. Update Categories List & Icons
-        let newCategories = [...categories];
-        let newIcons = { ...categoryIcons };
-        const icon = newIcons[oldName] || DEFAULT_ICON;
-
-        if (!categories.includes(newName)) {
-            newCategories = categories.map(c => c === oldName ? newName : c);
-            newIcons[newName] = icon;
-            delete newIcons[oldName];
-        } else {
-            // Target exists, just remove old one (merge)
-            newCategories = categories.filter(c => c !== oldName);
-            // newName keeps its own icon, oldName's icon is discarded
-            delete newIcons[oldName];
-        }
-
-        await db.settings.put({ key: 'categories', value: JSON.stringify(newCategories) });
-        await db.settings.put({ key: 'categoryIcons', value: JSON.stringify(newIcons) });
-
-        // 2. Migrate Expenses
-        const relatedExpenses = expenses.filter(e => e.category === oldName);
-        if (relatedExpenses.length > 0) {
-            await Promise.all(
-                relatedExpenses.map(e => db.expenses.update(e.id, { category: newName }))
-            );
-        }
-
-        // 3. Migrate Budgets
-        const relatedBudgets = budgets.filter(b => b.category === oldName);
-        if (relatedBudgets.length > 0) {
-            await Promise.all(
-                relatedBudgets.map(b => db.budgets.update(b.id, { category: newName }))
-            );
-        }
+        const { categories, categoryIcons, expenses, budgets } = get();
+        const result = await CategoryService.renameCategory(oldName, newName, categories, categoryIcons);
 
         set({
-            categories: newCategories,
-            categoryIcons: newIcons,
+            categories: result.categories,
+            categoryIcons: result.icons,
             expenses: expenses.map(e => e.category === oldName ? { ...e, category: newName } : e),
             budgets: budgets.map(b => b.category === oldName ? { ...b, category: newName } : b)
         });
@@ -235,14 +200,24 @@ export const useFinanceStore = create<FinanceState>((set, get) => ({
             (b) => b.category === budgetData.category && b.monthPeriod === budgetData.monthPeriod
         );
 
+        const now = new Date();
+
         if (existing) {
-            await db.budgets.update(existing.id, { limit: budgetData.limit });
+            await db.budgets.update(existing.id, {
+                limit: budgetData.limit,
+                updatedAt: now
+            });
             set({
-                budgets: budgets.map((b) => b.id === existing.id ? { ...b, limit: budgetData.limit } : b)
+                budgets: budgets.map((b) => b.id === existing.id ? { ...b, limit: budgetData.limit, updatedAt: now } : b)
             });
         } else {
             const id = uuidv4();
-            const newBudget = { ...budgetData, id };
+            const newBudget = {
+                ...budgetData,
+                id,
+                createdAt: now,
+                updatedAt: now
+            };
             await db.budgets.add(newBudget);
             set({ budgets: [...budgets, newBudget] });
         }
