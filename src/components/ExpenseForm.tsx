@@ -194,7 +194,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ initialData, onSuccess }) => 
                                 <img src={receiptPreview} alt="Receipt" className="w-full h-full object-contain" />
                             )}
 
-                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                            <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center gap-4">
                                 <label className="p-4 bg-white rounded-full text-slate-900 cursor-pointer shadow-lg">
                                     <Upload className="w-6 h-6" />
                                     <input type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />

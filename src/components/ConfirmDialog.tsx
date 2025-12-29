@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { AlertCircle, Trash2, X } from 'lucide-react';
 
 interface ConfirmDialogProps {
@@ -24,7 +25,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 }) => {
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-[28px] w-full max-w-sm shadow-2xl p-6 animate-in zoom-in-95 duration-200 border border-white/20 ring-1 ring-slate-900/5">
                 <div className="flex flex-col items-center text-center space-y-4">
@@ -36,7 +37,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                     {/* Content */}
                     <div className="space-y-2">
                         <h3 className="text-xl font-serif text-slate-900">{title}</h3>
-                        <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                        <p className="text-sm text-slate-500 leading-relaxed font-medium font-jakarta">
                             {message}
                         </p>
                     </div>
@@ -45,20 +46,21 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                     <div className="flex items-center space-x-3 w-full pt-4">
                         <button
                             onClick={onCancel}
-                            className="flex-1 py-3.5 px-4 bg-slate-50 text-slate-700 font-black text-xs uppercase tracking-widest rounded-full hover:bg-slate-100 transition-colors"
+                            className="flex-1 py-3.5 px-4 bg-slate-50 text-slate-700 font-bold font-jakarta text-xs uppercase tracking-widest rounded-full hover:bg-slate-100 transition-colors"
                         >
                             {cancelText}
                         </button>
                         <button
                             onClick={onConfirm}
-                            className={`flex-1 py-3.5 px-4 font-black text-xs uppercase tracking-widest rounded-full text-white shadow-lg transition-transform active:scale-95 ${variant === 'danger' ? 'bg-red-500 hover:bg-red-600 shadow-red-200' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'}`}
+                            className={`flex-1 py-3.5 px-4 font-bold font-jakarta text-xs uppercase tracking-widest rounded-full text-white shadow-lg transition-transform active:scale-95 ${variant === 'danger' ? 'bg-red-500 hover:bg-red-600 shadow-red-200' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-200'}`}
                         >
                             {confirmText}
                         </button>
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.getElementById('root') || document.body
     );
 };
 

@@ -156,8 +156,8 @@ const ExpenseDetail: React.FC = () => {
                                 onClick={() => setIsLightboxOpen(true)}
                             >
                                 <img src={receiptUrl} alt="Receipt" className="w-full h-auto max-h-80 object-contain mx-auto" />
-                                <div className="absolute inset-0 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <div className="bg-white p-3 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform">
+                                <div className="absolute inset-0 bg-slate-900/5 flex items-center justify-center">
+                                    <div className="bg-white p-3 rounded-full shadow-lg transition-transform">
                                         <Maximize2 className="w-5 h-5 text-slate-900" />
                                     </div>
                                 </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useFinanceStore, SYSTEM_CATEGORY, DEFAULT_ICON } from '../store/useFinanceStore';
-import { Tag, Pencil, Trash2, Plus, ArrowLeft, X } from 'lucide-react';
+import { Tag, Pencil, Trash2, Plus, ArrowLeft } from 'lucide-react';
 import IconPicker from './IconPicker';
 import { getIconComponent } from '../utils/iconUtils';
 import { toast } from 'sonner';
@@ -189,6 +189,14 @@ const CategoryBudgetManager: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                <ConfirmDialog
+                    isOpen={!!deleteConfirmation}
+                    title="Delete Category?"
+                    message={`Are you sure you want to delete "${deleteConfirmation?.id}"? usage history will be moved to "${SYSTEM_CATEGORY}".`}
+                    onConfirm={confirmDelete}
+                    onCancel={() => setDeleteConfirmation(null)}
+                />
             </div>
         );
     }
