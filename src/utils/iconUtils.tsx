@@ -11,7 +11,6 @@ import {
     Gift,
     Smartphone,
     Wifi,
-    Droplets,
     Briefcase,
     Music,
     Film,

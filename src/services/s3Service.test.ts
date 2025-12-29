@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('s3Service', () => {
     let s3Service: any;
-    let S3ClientMock: any;
+
     let PutObjectCommandMock: any;
     let mockSend: any;
     let db: any;
@@ -44,7 +44,7 @@ describe('s3Service', () => {
         s3Service = module;
         const dbModule = await import('../db/db');
         db = dbModule.db;
-        S3ClientMock = MockS3Client; // For assertions (though checking instances is harder, we check mockSend)
+
     });
 
     describe('uploadToS3', () => {

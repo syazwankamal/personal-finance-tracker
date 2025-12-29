@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { getIconComponent, AVAILABLE_ICONS, DEFAULT_ICON } from './iconUtils';
-import React from 'react';
+
 
 describe('iconUtils', () => {
     describe('getIconComponent', () => {
         it('returns correct component for known icon name', () => {
             const iconName = 'ShoppingBag';
-            const { container } = render(getIconComponent(iconName, { 'data-testid': 'icon' }));
+            const { container } = render(getIconComponent(iconName, { 'data-testid': 'icon' } as any));
 
             // Allow flexibility in how lucide renders, effectively checking it renders *something*
             // and that it corresponds to the expected component logic
@@ -15,7 +15,7 @@ describe('iconUtils', () => {
         });
 
         it('returns default icon (Tag) for unknown icon name', () => {
-            const { container } = render(getIconComponent('UnknownIconRandom', { 'data-testid': 'icon' }));
+            const { container } = render(getIconComponent('UnknownIconRandom', { 'data-testid': 'icon' } as any));
             expect(container.querySelector('svg')).toBeInTheDocument();
         });
 

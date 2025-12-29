@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { AlertCircle, Trash2, X } from 'lucide-react';
+import { AlertCircle, Trash2 } from 'lucide-react';
 
 interface ConfirmDialogProps {
     isOpen: boolean;

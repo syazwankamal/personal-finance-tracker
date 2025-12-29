@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useFinanceStore } from './useFinanceStore';
 import { resetDb } from '../test/setup';
 import { db } from '../db/db';
 import { ExpenseService } from '../services/ExpenseService';
-import { CategoryService } from '../services/CategoryService';
+import { useFinanceStore } from './useFinanceStore';
+
 
 // Mock services - keep these to isolate side effects like S3 or calculation complexity if needed
 // However, for correctness, we might want to test the full flow if possible.
@@ -11,9 +11,9 @@ import { CategoryService } from '../services/CategoryService';
 // Let's keep mocks for Service calls to ensure Store properly delegates.
 vi.mock('../services/ExpenseService', () => ({
     ExpenseService: {
-        addExpense: vi.fn(async (data) => ({ ...data, id: 'mock-service-id', createdAt: new Date(), updatedAt: new Date() })),
-        updateExpense: vi.fn(async (id, data) => data),
-        deleteExpense: vi.fn(async () => { })
+        addExpense: vi.fn(async (data) => data),
+        updateExpense: vi.fn(async (_id, data) => data),
+        deleteExpense: vi.fn(async (_id) => { }),
     }
 }));
 

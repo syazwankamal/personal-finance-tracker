@@ -23,8 +23,20 @@ A private, offline-first personal finance tracker built as a React PWA. This app
 npm install
 npm run dev
 ```
+npm run dev
+```
 
-### 2. AWS S3 Configuration (Critical)
+### 2. Running Tests
+To run the automated test suite (Unit & Integration):
+```bash
+npm test
+```
+To run tests with UI and coverage:
+```bash
+npx vitest --ui --coverage
+```
+
+### 3. AWS S3 Configuration (Critical)
 To enable cloud backups, you must enable **CORS** on your S3 bucket to allow the PWA's domain to upload files directly.
 
 **Minimal CORS Template (AWS Console):**

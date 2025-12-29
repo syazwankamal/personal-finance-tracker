@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('aiService', () => {
     let extractExpenseWithAI: any;
-    let GoogleGenerativeAIMock: any;
+
     let mockGenerateContent: any;
 
     beforeEach(async () => {
@@ -18,7 +18,7 @@ describe('aiService', () => {
             getGenerativeModel = mockGetGenerativeModel;
         }
 
-        GoogleGenerativeAIMock = MockGenAI;
+
 
         vi.doMock('@google/generative-ai', () => ({
             GoogleGenerativeAI: MockGenAI

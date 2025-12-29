@@ -66,7 +66,7 @@ vi.mock('@google/generative-ai', () => {
 
 // Mock DB module completely to avoid actual IndexedDB calls
 // Mock DB implementation with in-memory storage for better "integration-like" testing
-const createMockTable = (name: string) => {
+const createMockTable = (_name: string) => {
     let storage: any[] = [];
     return {
         toArray: vi.fn(() => Promise.resolve([...storage])),
