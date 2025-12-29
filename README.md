@@ -44,6 +44,21 @@ To enable cloud backups, you must enable **CORS** on your S3 bucket to allow the
 ### 3. Google Gemini
 Obtain an API key from the [Google AI Studio](https://aistudio.google.com/) and enter it in the app's **Settings** tab.
 
+## 🌍 Deployment (Cloudflare Pages)
+This app is optimized for static deployment on **Cloudflare Pages**.
+
+### Steps:
+1.  **Push to Git**: Ensure your code is pushed to a GitHub or GitLab repository.
+2.  **Create Project**: Log in to [Cloudflare Dashboard](https://dash.cloudflare.com/) > **Workers & Pages** > **Create Application** > **Connect to Git**.
+3.  **Build Settings**:
+    *   **Framework Preset**: `Vite`
+    *   **Build Command**: `npm run build`
+    *   **Output Directory**: `dist`
+4.  **Save & Deploy**: Cloudflare will build the site and provide a `.pages.dev` URL.
+
+> [!NOTE]
+> A `public/_redirects` file is included to handle client-side routing (redirecting all paths to `index.html`), preventing 404 errors on refresh.
+
 ## 🔒 Security & Privacy
 - **Local Secret Management (LSM)**: Secrets are stored in IndexedDB, which is generally safer than LocalStorage against script injection but still requires device-level security (passcodes).
 - **Encryption**: Data is stored unencrypted locally. It is recommended to use this app on a device with full-disk encryption enabled (Standard on modern iOS/Android/macOS).
