@@ -120,29 +120,55 @@ const ExpenseDetail: React.FC = () => {
                         <div className="flex items-center justify-between">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Receipt Attachment</p>
                             <button
-                                onClick={() => setIsLightboxOpen(true)}
+                                onClick={() => {
+                                    if (receiptUrl.startsWith('data:application/pdf')) {
+                                        const win = window.open();
+                                        if (win) {
+                                            win.document.write('<iframe src="' + receiptUrl + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+                                        }
+                                    } else {
+                                        setIsLightboxOpen(true);
+                                    }
+                                }}
                                 className="text-[10px] font-black text-blue-600 uppercase tracking-widest"
                             >
-                                View full size
+                                {receiptUrl.startsWith('data:application/pdf') ? 'Open PDF' : 'View full size'}
                             </button>
                         </div>
-                        <div
-                            className="relative group rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer"
-                            onClick={() => setIsLightboxOpen(true)}
-                        >
-                            <img src={receiptUrl} alt="Receipt" className="w-full h-auto max-h-80 object-contain mx-auto" />
-                            <div className="absolute inset-0 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <div className="bg-white p-3 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform">
-                                    <Maximize2 className="w-5 h-5 text-slate-900" />
+
+                        {receiptUrl.startsWith('data:application/pdf') ? (
+                            <div
+                                className="relative group rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer p-8 flex flex-col items-center justify-center gap-4 hover:border-blue-500 transition-colors"
+                                onClick={() => {
+                                    const win = window.open();
+                                    if (win) {
+                                        win.document.write('<iframe src="' + receiptUrl + '" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>');
+                                    }
+                                }}
+                            >
+                                <FileText className="w-16 h-16 text-red-500" />
+                                <span className="text-sm font-bold text-slate-700">PDF Document</span>
+                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Click to view</span>
+                            </div>
+                        ) : (
+                            <div
+                                className="relative group rounded-[20px] overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer"
+                                onClick={() => setIsLightboxOpen(true)}
+                            >
+                                <img src={receiptUrl} alt="Receipt" className="w-full h-auto max-h-80 object-contain mx-auto" />
+                                <div className="absolute inset-0 bg-slate-900/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <div className="bg-white p-3 rounded-full shadow-lg scale-90 group-hover:scale-100 transition-transform">
+                                        <Maximize2 className="w-5 h-5 text-slate-900" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>
 
-            {/* Lightbox / Fullscreen */}
-            {isLightboxOpen && receiptUrl && (
+            {/* Lightbox / Fullscreen for Images Only */}
+            {isLightboxOpen && receiptUrl && !receiptUrl.startsWith('data:application/pdf') && (
                 <div
                     className="fixed inset-0 z-[100] bg-slate-900/95 flex items-center justify-center p-6 animate-in fade-in duration-200"
                     onClick={() => setIsLightboxOpen(false)}
