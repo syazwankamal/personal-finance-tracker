@@ -53,6 +53,10 @@ Navigation (Sitemap):
 3. Technical Implementation Context
 Frontend: React (Vite-based), mobile-first PWA.
 
+Styling: Tailwind CSS v4 (via `@tailwindcss/vite`).
+*   **Theme Source**: CSS Variables defined in `src/index.css`.
+*   **Configuration**: Zero-config approach (No `tailwind.config.js`).
+
 State Management: Zustand.
 
 Storage: IndexedDB (via Dexie.js) for 100% offline data persistence.
@@ -64,4 +68,28 @@ One-Handed UX: All primary actions (FAB, Nav, Buttons) must be within thumb reac
 
 AI Clarification: If the user’s input is missing data (e.g., no amount), the AI must prompt for it before saving.
 
-Budgeting: Visual charts should mirror the "Daily Coffee" style—minimalist line/bar graphs against neutral backgrounds.
+
+5. AI & Developer Guidelines (Strict Enforcement)
+
+To maintain the "Warm, Organic" aesthetic and prevent design drift, all AI agents and developers must adhere to these rules:
+
+### Rule 1: Use Atomic Components
+NEVER use raw HTML elements (`<button>`, `<input>`, `<div>` for cards) when a standardized component exists.
+*   **Buttons**: Use `<Button variant="..." />`.
+*   **Inputs**: Use `<Input label="..." />`.
+*   **Containers**: Use `<Card>...</Card>`.
+
+### Rule 2: No Hardcoded Colors
+NEVER use hex codes (e.g., `#3b82f6`) in Tailwind classes.
+*   ✅ Correct: `bg-blue-500` or `text-slate-900`
+*   ❌ Incorrect: `bg-[#3b82f6]`
+
+### Rule 3: The "Organic" Shape Language
+*   **Inputs**: Must imply a "pill" shape (`rounded-[20px]`).
+*   **Cards**: Must use high border radius (`rounded-[28px]`).
+*   **Shadows**: Use `shadow-sm` for depth, avoid flat borders unless active.
+
+### Rule 4: Typography
+*   **Headers**: Always use `font-serif` (Cardo).
+*   **UI Text**: Always use `font-jakarta` (Plus Jakarta Sans).
+*   **Labels**: Always `uppercase tracking-widest text-xs font-bold`.

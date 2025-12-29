@@ -115,6 +115,17 @@ State is treated as a **projection of persisted data**, not the authority.
 
 IndexedDB is considered a **local database**, not a cache.
 
+### 3.5 Testing Strategy: Vitest
+
+**Reasoning:**
+Reliability is paramount for a financial tool. Manual testing is insufficient for complex logic like recurring budgets and offline sync.
+
+**Decision:**
+*   **Unit Tests**: Required for all Utilities and Services.
+*   **Component Tests**: Required for complex pages (`ExpenseForm`, `History`).
+*   **Build Gate**: CI/Build fails if `npm test` fails.
+*   **Coverage**: Aim for high statement coverage on core logic (`useFinanceStore`).
+
 ---
 
 ## 4. Data Ownership & Flow
@@ -283,6 +294,21 @@ This allows future migration to:
 * Multi-device support
 
 Without rewriting core business logic.
+
+---
+
+## 11. Deployment Strategy
+
+### 11.1 Static Hosting (Cloudflare Pages)
+
+**Reasoning:**
+To strictly enforce the "Zero Backend" architecture, the application is deployed as a purely static asset bundle.
+
+**Benefits:**
+*   **Security**: No server-side attack surface.
+*   **Cost**: Free tier eligible.
+*   **Performance**: Global CDN distribution.
+*   **SPA Routing**: Handled via `_redirects` configuration.
 
 ---
 
