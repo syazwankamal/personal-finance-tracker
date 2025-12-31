@@ -1,6 +1,7 @@
 import React from 'react';
 import Settings from '../components/Settings';
 import { Shield, Database } from 'lucide-react';
+import { APP_VERSION } from '../constants/app';
 
 const SettingsPage: React.FC = () => {
     return (
@@ -24,7 +25,7 @@ const SettingsPage: React.FC = () => {
                     <Database className="w-4 h-4" />
                     <span className="text-[10px] font-bold uppercase tracking-widest">Local-First Storage Active</span>
                 </div>
-                <p className="text-[10px] text-slate-400 font-medium">Version 1.2.0 • Build 20251224</p>
+                <p className="text-[10px] text-slate-400 font-medium">Version {APP_VERSION}</p>
             </footer>
         </div>
     );
