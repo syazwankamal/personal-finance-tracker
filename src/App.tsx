@@ -14,6 +14,8 @@ import { useSettingsStore } from './store/useSettingsStore'
 import { AnalyticsService } from './services/analytics'
 import './App.css'
 
+import LandingPage from './pages/LandingPage'
+
 // Route Tracker Component
 const RouteTracker = () => {
   const location = useLocation();
@@ -25,9 +27,18 @@ const RouteTracker = () => {
   return null;
 };
 
+// Auth Guard
+const RequireUser = ({ children }: { children: JSX.Element }) => {
+  const { userName } = useSettingsStore();
+  if (!userName) {
+    return <Navigate to="/welcome" replace />;
+  }
+  return children;
+};
+
 function App() {
-  const { loadAppData, isLoading } = useFinanceStore();
-  const { loadSettings } = useSettingsStore();
+  const { loadAppData, isLoading: isFinanceLoading } = useFinanceStore();
+  const { loadSettings, isLoading: isSettingsLoading } = useSettingsStore();
 
   useEffect(() => {
     // Initialize Analytics
@@ -37,7 +48,7 @@ function App() {
     loadSettings();
   }, [loadAppData, loadSettings]);
 
-  if (isLoading) {
+  if (isFinanceLoading || isSettingsLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -50,7 +61,15 @@ function App() {
       <RouteTracker />
       <Toaster position="top-center" richColors />
       <Routes>
-        <Route element={<Layout />}>
+        {/* Public Route */}
+        <Route path="/welcome" element={<LandingPage />} />
+
+        {/* Protected App Routes */}
+        <Route element={
+          <RequireUser>
+            <Layout />
+          </RequireUser>
+        }>
           <Route path="/" element={<Home />} />
           <Route path="/expenses" element={<History />} />
           <Route path="/expenses/:id" element={<ExpenseDetail />} />
@@ -58,10 +77,10 @@ function App() {
           <Route path="/add" element={<AddExpense />} />
           <Route path="/budgets" element={<Budgets />} />
           <Route path="/settings" element={<SettingsPage />} />
-
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
+
+        {/* Catch all - Redirect to root (which checks for user) */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

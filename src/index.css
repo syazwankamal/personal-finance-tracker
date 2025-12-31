@@ -35,26 +35,36 @@ body {
 
 #root {
   width: 100%;
-  max-width: 420px;
-  background-color: #f1f5f9;
+  /* max-width removed to allow full screen pages */
   min-height: 100vh;
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 0 20px;
+  /* padding removed to allow full screen pages */
 }
 
-/* Desktop Encapsulation (Mobile Viewport) */
+/* Mobile-First App Container (Restores the mobile view for the app) */
+.app-container {
+  width: 100%;
+  max-width: 420px;
+  background-color: #f1f5f9;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Desktop Encapsulation for App Container */
 @media (min-width: 421px) {
   body {
     background-color: #e2e8f0;
-    /* Slightly darker background for contrast */
+    /* Reverting to lighter background */
   }
 
-  #root {
-    margin: 0 auto;
+  .app-container {
     height: 100vh;
-    min-height: 100vh;
     border: none;
     outline: none;
     border-left: 1px solid rgba(0, 0, 0, 0.05);
@@ -69,11 +79,11 @@ body {
     scrollbar-color: var(--slate-300) transparent;
   }
 
-  #root::-webkit-scrollbar {
+  .app-container::-webkit-scrollbar {
     width: 6px;
   }
 
-  #root::-webkit-scrollbar-thumb {
+  .app-container::-webkit-scrollbar-thumb {
     background: var(--slate-300);
     border-radius: 10px;
   }
