@@ -226,8 +226,13 @@ The `/api/ai/extract` endpoint is updated to support conversational context.
   "categories": ["Food", "Transport", "Shopping"],
   "currency": "MYR",
   "previousState": { // Optional: Data collected so far
-    "name": "Dinner",
-    "category": "Food"
+    "name": "makan tengah hari",
+    "amount": 50,
+    "category": null,
+    "date": "2025-12-31T10:00:00Z",
+    "notes": "",
+    "confidence": "low",
+    "missingFields": ["category"]
   },
   "history": [ // Optional: Last 3 turns for context
     { "role": "user", "text": "I had dinner" },
@@ -251,7 +256,7 @@ The `/api/ai/extract` endpoint is updated to support conversational context.
     *   Set `status` to "incomplete".
     *   Populate `data` with what you HAVE found so far.
     *   Set `assistant_message` to a natural language question asking for the *specific* missing piece.
-    *   **Defense:** Do not answer general knowledge questions (e.g., "What is the capital of France?"). Reply: "I can only help you track expenses. Please provide the details."
+    *   **Defense:** Do not answer general knowledge questions. Reply: "I can only help you track expenses. Please provide the details."
 
 **Output JSON Schema:**
 ```json
@@ -262,7 +267,9 @@ The `/api/ai/extract` endpoint is updated to support conversational context.
     "amount": "number (nullable)",
     "category": "string (nullable)",
     "date": "ISO-string (nullable)",
-    "currency": "string"
+    "notes": "string",
+    "confidence": "high" | "low",
+    "missingFields": ["string"]
   },
   "assistant_message": "string (nullable)"
 }
@@ -272,4 +279,20 @@ The `/api/ai/extract` endpoint is updated to support conversational context.
 *   **Currency:** If user says "bucks" or "dollars" but context is `MYR`, assume `MYR` unless explicitly stated otherwise (e.g., "USD 50").
 *   **Date:** "Today" = `currentDate`. "Yesterday" = `currentDate - 1 day`.
 *   **Ambiguity:** If user says "Apple", ask: "Was this 'Groceries' or 'Electronics'?" instead of guessing.
+
+---
+
+## 10. Client Implementation Requirements
+
+### 10.1 Double Submission Prevention
+To protect against accidental double-charging of the AI quota and UI glitches:
+1.  **Loading State:** The "Send" button in the AI Chat must be disabled immediately upon click.
+2.  **Input Lock:** The text input field should be read-only while a request is in flight.
+3.  **Visual Feedback:** A "Thinking..." or loading spinner must be shown in the chat window to indicate background processing.
+
+### 10.2 State Persistence
+1.  **In-Memory State:** The `current_state` (partial expense data) should be kept in the component state or a dedicated store during the conversation.
+2.  **Reset:** The state must be cleared once an expense is successfully created or the user manually cancels the flow.
+3.  **Prompt Construction:** The client is responsible for sending the `previousState` to the backend. The backend will inject this state into the System Prompt so the AI understands the progress (e.g., "We already know the amount is RM 50. Now we just need the category.").
+
 
